@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from fuzzywuzzy import fuzz
+#from fuzzywuzzy import fuzz
 import io
 
 # Function to determine test-taker status and match percentage
