@@ -45,11 +45,11 @@ name_threshold = st.sidebar.slider("Name Similarity Threshold", min_value=0, max
 number_threshold = st.sidebar.slider("Number Similarity Threshold", min_value=0, max_value=100, value=90, step=1)
 
 # File upload for 'nfo 6-8' Excel file
-st.sidebar.write("### Upload 'nfo 6-8' Excel File")
+st.sidebar.write("### Upload 'NFO Sheet Data' Excel File")
 uploaded_nfo_file = st.sidebar.file_uploader("Choose a file", type=["xlsx"], key="nfo_file")
 
 # File upload for 'all_student_names' Excel file
-st.sidebar.write("### Upload 'all_student_names' Excel File")
+st.sidebar.write("### Upload 'Test Details' Excel File")
 uploaded_test_names_file = st.sidebar.file_uploader("Choose a file", type=["xlsx"], key="test_names_file")
 
 # Check if files are uploaded
