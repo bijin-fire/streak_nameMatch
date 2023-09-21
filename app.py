@@ -25,13 +25,13 @@ def determine_test_taker_status(name, number, df_test_takers, name_threshold, nu
     
     # Determine test-taker status based on name and number matches
     if name_match_percentage > number_match_percentage:
-        test_taker_status = "Test Taken (Name Match)"
+        test_taker_status = "u'\u2713'(Name Match)"
         match_percentage = name_match_percentage
     elif number_match_percentage > 0:
-        test_taker_status = "Test Taken (Number Match)"
+        test_taker_status = "u'\u2713'(Number Match)"
         match_percentage = number_match_percentage
     else:
-        test_taker_status = "Not Taken"
+        test_taker_status = " "
         match_percentage = 0  # Set match percentage to 0 for non-matches
     
     return test_taker_status, match_percentage
