@@ -48,18 +48,23 @@ number_threshold = st.sidebar.slider("Number Similarity Threshold", min_value=0,
 st.sidebar.write("### Upload 'NFO Sheet Data' Excel File")
 uploaded_nfo_file = st.sidebar.file_uploader("Choose a file", type=["xlsx"], key="nfo_file")
 
-# File upload for 'all_student_names' Excel file
-st.sidebar.write("### Upload 'Test Details' Excel File")
-uploaded_test_names_file = st.sidebar.file_uploader("Choose a file", type=["xlsx"], key="test_names_file")
+# File upload for 'all_student_names' Excel files
+st.sidebar.write("### Upload 'Test Details' Excel Files")
+uploaded_test_names_files = st.sidebar.file_uploader("Choose files", type=["xlsx"], accept_multiple_files=True, key="test_names_files")
 
 # Check if files are uploaded
-if uploaded_nfo_file is not None and uploaded_test_names_file is not None:
+if uploaded_nfo_file is not None and uploaded_test_names_files is not None:
     try:
         # Load the uploaded 'nfo 6-8' Excel file containing all student names and numbers
         df_all_names = pd.read_excel(uploaded_nfo_file)
 
-        # Load the uploaded 'all_student_names' Excel file containing names and mobile numbers of students who have taken the test
-        df_test_takers = pd.read_excel(uploaded_test_names_file)
+        # Combine multiple uploaded 'all_student_names' Excel sheets into one DataFrame
+        dfs_test_takers = []
+        for uploaded_file in uploaded_test_names_files:
+            df_test_takers = pd.read_excel(uploaded_file)
+            dfs_test_takers.append(df_test_takers)
+
+        df_test_takers_combined = pd.concat(dfs_test_takers, ignore_index=True)
 
         # Display the uploaded data
         st.write("### Input Data")
@@ -73,7 +78,7 @@ if uploaded_nfo_file is not None and uploaded_test_names_file is not None:
             name = row['Name of Student']
             number = row['Student Number']
 
-            test_taker_status, match_percentage = determine_test_taker_status(name, number, df_test_takers, name_threshold, number_threshold)
+            test_taker_status, match_percentage = determine_test_taker_status(name, number, df_test_takers_combined, name_threshold, number_threshold)
 
             test_taker_status_list.append(test_taker_status)
             match_percentage_list.append(match_percentage)
