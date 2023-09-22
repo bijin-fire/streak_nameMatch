@@ -2,5 +2,6 @@ fuzzywuzzy==0.18.0
 pandas==1.5.3
 XlsxWriter==3.1.4
 streamlit==1.26.0
-openpyxl
 scikit-learn
+openpyxl
+
