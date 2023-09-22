@@ -108,8 +108,7 @@
 # st.sidebar.info(
 #     "This app calculates test-taker status and match percentage based on fuzzy matching "
 #     "for both name and number columns. You can adjust the similarity thresholds using the sidebar."
-# )
-import pandas as pd
+# )import pandas as pd
 import streamlit as st
 from fuzzywuzzy import fuzz
 import io
@@ -177,25 +176,15 @@ if uploaded_nfo_file is not None and uploaded_test_names_files is not None:
 
         df_test_takers_combined = pd.concat(dfs_test_takers, ignore_index=True)
 
-        # Create a list of all unique student names and numbers from 'df_test_takers_combined'
-        unique_test_names = df_test_takers_combined['Full Name'].str.lower().unique()
-        unique_test_numbers = df_test_takers_combined['Mobile Number'].astype(str).unique()
+        # Display the uploaded data
+        st.write("### Input Data")
+        st.write(df_all_names.head())
 
-        # Find students from 'df_all_names' that are not in 'unique_test_names' or 'unique_test_numbers'
-        unmatched_students = df_all_names[
-            ~df_all_names['Name of Student'].str.lower().isin(unique_test_names) &
-            ~df_all_names['Student Number'].astype(str).isin(unique_test_numbers)
-        ]
-
-        # Display the unmatched students
-        st.write("### Unmatched Students")
-        st.write(unmatched_students)
-
-        # Calculate test-taker status and match percentage for the remaining students
+        # Calculate test-taker status and match percentage
         test_taker_status_list = []
         match_percentage_list = []
 
-        for index, row in unmatched_students.iterrows():
+        for index, row in df_all_names.iterrows():
             name = row['Name of Student']
             number = row['Student Number']
 
@@ -205,21 +194,49 @@ if uploaded_nfo_file is not None and uploaded_test_names_files is not None:
             match_percentage_list.append(match_percentage)
 
         # Add the results to the DataFrame
-        unmatched_students['Test_Taker_Status'] = test_taker_status_list
-        unmatched_students['Match_Percentage'] = match_percentage_list
+        df_all_names['Test_Taker_Status'] = test_taker_status_list
+        df_all_names['Match_Percentage'] = match_percentage_list
 
         # Display the results
-        st.write("### Results for Unmatched Students")
-        st.write(unmatched_students)
+        st.write("### Results")
+        st.write(df_all_names)
 
         # Export the results to an Excel file
         if st.button("Export Results to Excel"):
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                unmatched_students.to_excel(writer, sheet_name='Sheet1', index=False)
+                df_all_names.to_excel(writer, sheet_name='Sheet1', index=False)
                 writer.save()
             output.seek(0)
-            st.download_button(label="Download Results", data=output, file_name='unmatched_students_with_test_taker_status.xlsx', key="download_button")
+            st.download_button(label="Download Results", data=output, file_name='all_names_with_test_taker_status.xlsx', key="download_button")
+
+        # Create a set of unique names from the NFO sheet
+        nfo_names_set = set(df_all_names['Name of Student'].str.lower())
+
+        # Create a list to store unmatched names
+        unmatched_names = []
+
+        # Iterate through the test takers DataFrame to check for matches
+        for index, row in df_test_takers_combined.iterrows():
+            name = row['Full Name'].lower()
+            if name not in nfo_names_set:
+                unmatched_names.append(name)
+
+        # Create a DataFrame for unmatched names
+        df_unmatched_names = pd.DataFrame({'Unmatched Names': unmatched_names})
+
+        # Display the unmatched names
+        st.write("### Unmatched Names")
+        st.write(df_unmatched_names)
+
+        # Export the unmatched names to an Excel file
+        if st.button("Export Unmatched Names to Excel"):
+            output_unmatched = io.BytesIO()
+            with pd.ExcelWriter(output_unmatched, engine='xlsxwriter') as writer:
+                df_unmatched_names.to_excel(writer, sheet_name='Unmatched_Names', index=False)
+                writer.save()
+            output_unmatched.seek(0)
+            st.download_button(label="Download Unmatched Names", data=output_unmatched, file_name='unmatched_names.xlsx', key="download_button_unmatched")
 
     except Exception as e:
         st.error(f"An error occurred: {e}")
