@@ -108,7 +108,10 @@
 # st.sidebar.info(
 #     "This app calculates test-taker status and match percentage based on fuzzy matching "
 #     "for both name and number columns. You can adjust the similarity thresholds using the sidebar."
-# )import pandas as pd
+# )
+
+
+import pandas as pd
 import streamlit as st
 from fuzzywuzzy import fuzz
 import io
