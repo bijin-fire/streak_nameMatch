@@ -110,22 +110,25 @@
 #     "for both name and number columns. You can adjust the similarity thresholds using the sidebar."
 # )
 
-
 import pandas as pd
 import streamlit as st
 from fuzzywuzzy import fuzz
 import io
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Function to determine test-taker status and match percentage
-def determine_test_taker_status(name, number, df_test_takers, name_threshold, number_threshold):
+def determine_test_taker_status(name, number, df_test_takers, name_threshold, number_threshold, name_tfidf_vectorizer):
     name = name.lower()
     
     # Initialize match percentages
     name_match_percentage = 0
     number_match_percentage = 0
     
+    # Vectorize the input 'name'
+    input_name_tfidf = name_tfidf_vectorizer.transform([name])
+    
     # Check for fuzzy name matches in 'df_test_takers'
-    for test_name in df_test_takers['Full Name']:
+    for idx, test_name in enumerate(df_test_takers['Full Name']):
         name_similarity = fuzz.partial_ratio(name, test_name.lower())
         if name_similarity >= name_threshold:
             name_match_percentage = max(name_match_percentage, name_similarity)
@@ -179,6 +182,10 @@ if uploaded_nfo_file is not None and uploaded_test_names_files is not None:
 
         df_test_takers_combined = pd.concat(dfs_test_takers, ignore_index=True)
 
+        # Vectorize 'Full Name' column in df_test_takers
+        name_tfidf_vectorizer = TfidfVectorizer(analyzer='char', ngram_range=(2, 3))
+        name_tfidf_matrix = name_tfidf_vectorizer.fit_transform(df_test_takers_combined['Full Name'].apply(lambda x: str(x).lower()))
+
         # Display the uploaded data
         st.write("### Input Data")
         st.write(df_all_names.head())
@@ -191,7 +198,7 @@ if uploaded_nfo_file is not None and uploaded_test_names_files is not None:
             name = row['Name of Student']
             number = row['Student Number']
 
-            test_taker_status, match_percentage = determine_test_taker_status(name, number, df_test_takers_combined, name_threshold, number_threshold)
+            test_taker_status, match_percentage = determine_test_taker_status(name, number, df_test_takers_combined, name_threshold, number_threshold, name_tfidf_vectorizer)
 
             test_taker_status_list.append(test_taker_status)
             match_percentage_list.append(match_percentage)
@@ -213,34 +220,6 @@ if uploaded_nfo_file is not None and uploaded_test_names_files is not None:
             output.seek(0)
             st.download_button(label="Download Results", data=output, file_name='all_names_with_test_taker_status.xlsx', key="download_button")
 
-        # Create a set of unique names from the NFO sheet
-        nfo_names_set = set(df_all_names['Name of Student'].str.lower())
-
-        # Create a list to store unmatched names
-        unmatched_names = []
-
-        # Iterate through the test takers DataFrame to check for matches
-        for index, row in df_test_takers_combined.iterrows():
-            name = row['Full Name'].lower()
-            if name not in nfo_names_set:
-                unmatched_names.append(name)
-
-        # Create a DataFrame for unmatched names
-        df_unmatched_names = pd.DataFrame({'Unmatched Names': unmatched_names})
-
-        # Display the unmatched names
-        st.write("### Unmatched Names")
-        st.write(df_unmatched_names)
-
-        # Export the unmatched names to an Excel file
-        if st.button("Export Unmatched Names to Excel"):
-            output_unmatched = io.BytesIO()
-            with pd.ExcelWriter(output_unmatched, engine='xlsxwriter') as writer:
-                df_unmatched_names.to_excel(writer, sheet_name='Unmatched_Names', index=False)
-                writer.save()
-            output_unmatched.seek(0)
-            st.download_button(label="Download Unmatched Names", data=output_unmatched, file_name='unmatched_names.xlsx', key="download_button_unmatched")
-
     except Exception as e:
         st.error(f"An error occurred: {e}")
 
@@ -250,3 +229,4 @@ st.sidebar.info(
     "This app calculates test-taker status and match percentage based on fuzzy matching "
     "for both name and number columns. You can adjust the similarity thresholds using the sidebar."
 )
+
