@@ -230,3 +230,4 @@ st.sidebar.info(
     "for both name and number columns. You can adjust the similarity thresholds using the sidebar."
 )
 
+
