@@ -109,7 +109,6 @@
 #     "This app calculates test-taker status and match percentage based on fuzzy matching "
 #     "for both name and number columns. You can adjust the similarity thresholds using the sidebar."
 # )
-
 import pandas as pd
 import streamlit as st
 from fuzzywuzzy import fuzz
@@ -178,18 +177,25 @@ if uploaded_nfo_file is not None and uploaded_test_names_files is not None:
 
         df_test_takers_combined = pd.concat(dfs_test_takers, ignore_index=True)
 
-        # Display the uploaded data
-        st.write("### Input Data")
-        st.write(df_all_names.head())
+        # Create a list of all unique student names and numbers from 'df_test_takers_combined'
+        unique_test_names = df_test_takers_combined['Full Name'].str.lower().unique()
+        unique_test_numbers = df_test_takers_combined['Mobile Number'].astype(str).unique()
 
-        # Calculate test-taker status and match percentage
+        # Find students from 'df_all_names' that are not in 'unique_test_names' or 'unique_test_numbers'
+        unmatched_students = df_all_names[
+            ~df_all_names['Name of Student'].str.lower().isin(unique_test_names) &
+            ~df_all_names['Student Number'].astype(str).isin(unique_test_numbers)
+        ]
+
+        # Display the unmatched students
+        st.write("### Unmatched Students")
+        st.write(unmatched_students)
+
+        # Calculate test-taker status and match percentage for the remaining students
         test_taker_status_list = []
         match_percentage_list = []
 
-        # Create a list to store students who didn't match with NFO Sheet data
-        students_not_in_nfo = []
-
-        for index, row in df_all_names.iterrows():
+        for index, row in unmatched_students.iterrows():
             name = row['Name of Student']
             number = row['Student Number']
 
@@ -198,34 +204,22 @@ if uploaded_nfo_file is not None and uploaded_test_names_files is not None:
             test_taker_status_list.append(test_taker_status)
             match_percentage_list.append(match_percentage)
 
-            # If there is no match, add the student to the list
-            if test_taker_status == " ":
-                students_not_in_nfo.append(row.to_dict())
-
         # Add the results to the DataFrame
-        df_all_names['Test_Taker_Status'] = test_taker_status_list
-        df_all_names['Match_Percentage'] = match_percentage_list
+        unmatched_students['Test_Taker_Status'] = test_taker_status_list
+        unmatched_students['Match_Percentage'] = match_percentage_list
 
         # Display the results
-        st.write("### Results")
-        st.write(df_all_names)
+        st.write("### Results for Unmatched Students")
+        st.write(unmatched_students)
 
-        # Create a DataFrame for students not in NFO Sheet
-        df_students_not_in_nfo = pd.DataFrame(students_not_in_nfo)
-
-        # Display students not in NFO Sheet
-        st.write("### Students Not in NFO Sheet")
-        st.write(df_students_not_in_nfo)
-
-        # Export the results and students not in NFO Sheet to Excel files
+        # Export the results to an Excel file
         if st.button("Export Results to Excel"):
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df_all_names.to_excel(writer, sheet_name='Sheet1', index=False)
-                df_students_not_in_nfo.to_excel(writer, sheet_name='Students_Not_in_NFO', index=False)
+                unmatched_students.to_excel(writer, sheet_name='Sheet1', index=False)
                 writer.save()
             output.seek(0)
-            st.download_button(label="Download Results", data=output, file_name='all_names_with_test_taker_status.xlsx', key="download_button")
+            st.download_button(label="Download Results", data=output, file_name='unmatched_students_with_test_taker_status.xlsx', key="download_button")
 
     except Exception as e:
         st.error(f"An error occurred: {e}")
@@ -236,4 +230,3 @@ st.sidebar.info(
     "This app calculates test-taker status and match percentage based on fuzzy matching "
     "for both name and number columns. You can adjust the similarity thresholds using the sidebar."
 )
-
